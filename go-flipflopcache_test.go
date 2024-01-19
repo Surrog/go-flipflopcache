@@ -83,3 +83,50 @@ func TestFlipFlop(t *testing.T) {
 		t.Fatalf("Flip not happened yet")
 	}
 }
+
+func TestReset(t *testing.T) {
+	cache := NewFlipFlopCache(5 * time.Second)
+
+	cache.Append("test", nil)
+	_, ok := cache.Get("test")
+	if !ok {
+		t.Fatalf("expected value inside")
+	}
+	time.Sleep(6 * time.Second)
+	_, ok = cache.Get("test")
+	if !ok {
+		t.Fatalf("expected value inside")
+	}
+	time.Sleep(11 * time.Second)
+	_, ok = cache.Get("test")
+	if ok {
+		t.Fatalf("unexpected value inside")
+	}
+	cache.Append("test", nil)
+	_, ok = cache.Get("test")
+	if !ok {
+		t.Fatalf("expected value inside")
+	}
+	cache.Reset()
+	_, ok = cache.Get("test")
+	if ok {
+		t.Fatalf("unexpected value inside")
+	}
+}
+
+func TestAppendAfterFlip(t *testing.T) {
+	cache := NewFlipFlopCache(5 * time.Second)
+
+	time.Sleep(6 * time.Second)
+	cache.Append("test", nil)
+	_, ok := cache.Get("test")
+	if !ok {
+		t.Fatalf("expected value inside")
+	}
+	time.Sleep(11 * time.Second)
+	cache.Append("test", nil)
+	_, ok = cache.Get("test")
+	if !ok {
+		t.Fatalf("expected value inside")
+	}
+}

@@ -31,6 +31,13 @@ func (cache *FlipFlopCache) Flip() {
 	cache.timeLastFlip = time.Now()
 }
 
+func (cache *FlipFlopCache) Reset() {
+	cache.mainCacheA = true
+	cache.cacheA = map[string][]byte{}
+	cache.cacheB = map[string][]byte{}
+	cache.timeLastFlip = time.Now()
+}
+
 func get(mainCache *map[string][]byte, secondCache *map[string][]byte, key string) ([]byte, bool) {
 	val, ok := (*mainCache)[key]
 	if ok {
@@ -44,10 +51,19 @@ func get(mainCache *map[string][]byte, secondCache *map[string][]byte, key strin
 	return oldVal, oldOk
 }
 
-func (cache *FlipFlopCache) Get(key string) ([]byte, bool) {
+func (cache *FlipFlopCache) expireFlip() {
+	if time.Since(cache.timeLastFlip) > 2*cache.timeBetweenReset {
+		cache.Reset()
+		return
+	}
+
 	if time.Since(cache.timeLastFlip) > cache.timeBetweenReset {
 		cache.Flip()
 	}
+}
+
+func (cache *FlipFlopCache) Get(key string) ([]byte, bool) {
+	cache.expireFlip()
 
 	if cache.mainCacheA {
 		return get(&cache.cacheA, &cache.cacheB, key)
@@ -57,6 +73,8 @@ func (cache *FlipFlopCache) Get(key string) ([]byte, bool) {
 }
 
 func (cache *FlipFlopCache) Append(key string, value []byte) {
+	cache.expireFlip()
+
 	if cache.mainCacheA {
 		cache.cacheA[key] = value
 	} else {
